@@ -27,4 +27,3 @@ class EXPResPartner(models.Model):
     _inherit = 'res.partner'
 
     supplier_ref = fields.Char(string="Supplier Reference")
-    # TODO Display this field on views if supplier_rank == 1

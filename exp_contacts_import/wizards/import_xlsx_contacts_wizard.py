@@ -3,6 +3,45 @@ import xlrd
 import tempfile
 import binascii
 
+_ref_vat = {
+    'at': 'ATU12345675',
+    'be': 'BE0477472701',
+    'bg': 'BG1234567892',
+    'ch': 'CHE-123.456.788 TVA or CH TVA 123456',  # Swiss by Yannick Vaucher @ Camptocamp
+    'cl': 'CL76086428-5',
+    'co': 'CO213123432-1 or CO213.123.432-1',
+    'cy': 'CY12345678F',
+    'cz': 'CZ12345679',
+    'de': 'DE123456788',
+    'dk': 'DK12345674',
+    'ee': 'EE123456780',
+    'el': 'EL12345670',
+    'es': 'ESA12345674',
+    'fi': 'FI12345671',
+    'fr': 'FR32123456789',
+    'gb': 'GB123456782',
+    'gr': 'GR12345670',
+    'hu': 'HU12345676',
+    'hr': 'HR01234567896',  # Croatia, contributed by Milan Tribuson
+    'ie': 'IE1234567FA',
+    'it': 'IT12345670017',
+    'lt': 'LT123456715',
+    'lu': 'LU12345613',
+    'lv': 'LV41234567891',
+    'mt': 'MT12345634',
+    'mx': 'ABC123456T1B',
+    'nl': 'NL123456782B90',
+    'no': 'NO123456785',
+    'pe': '10XXXXXXXXY or 20XXXXXXXXY or 15XXXXXXXXY or 16XXXXXXXXY or 17XXXXXXXXY',
+    'pl': 'PL1234567883',
+    'pt': 'PT123456789',
+    'ro': 'RO1234567897',
+    'se': 'SE123456789701',
+    'si': 'SI12345679',
+    'sk': 'SK0012345675',
+    'tr': 'TR1234567890 (VERGINO) veya TR12345678901 (TCKIMLIKNO)'  # Levent Karakas @ Eska Yazilim A.S.
+}
+
 
 class ContactsXlsxDataWizard(models.TransientModel):
     _name = 'import.contacts.data.wizard'
@@ -29,7 +68,13 @@ class ContactsXlsxDataWizard(models.TransientModel):
                 # todo generate a uniq external ID
                 name = row[col_names.index("Partenaire")]
                 partner_code = row[col_names.index("Code Partenaire")]
-                vat = row[col_names.index("Numéro d'identification d'entreprise")]
+                vat = str(row[col_names.index("Numéro d'identification d'entreprise")])
+                vat = vat.replace('.', '').replace(' ', '')
+                vat_is_correct = True
+                if vat:
+                    if vat[:2].lower() not in _ref_vat.keys() or len(vat) != len(_ref_vat[vat[:2].lower()]):
+                        vat_is_correct = False
+
                 country_name = row[col_names.index("Pays (destinataire facture)")]
                 contact_name = row[col_names.index("Contact")]
                 partner_type = row[col_names.index("Type de partenaire")]
@@ -50,7 +95,7 @@ class ContactsXlsxDataWizard(models.TransientModel):
                     partner = self.env['res.partner'].create({
                         'company_type': 'company',
                         'name': name,
-                        'vat': vat,
+                        'vat': vat if vat_is_correct else "",
                         'customer_rank': customer_rank,
                         'supplier_rank': supplier_rank,
                         'ref': partner_code if customer_rank == 1 else "",
