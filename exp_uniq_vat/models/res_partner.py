@@ -30,6 +30,5 @@ class EXPResPartner(models.Model):
     @api.constrains('vat')
     def _check_uniq_vat(self):
         for partner in self:
-            if self.search([('id', '!=', partner.id),
-                            ('vat', '=', partner.vat)], limit=1):
+            if self.search([('id', '!=', partner.id), ('vat', '=', partner.vat)], limit=1):
                 raise UserError(_('You have already defined a partner with the same VAT number. '))
