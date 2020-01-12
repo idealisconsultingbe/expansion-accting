@@ -21,7 +21,7 @@
 ##############################################################################
 
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo import exceptions
 
 
 class EXPResPartner(models.Model):
@@ -31,4 +31,4 @@ class EXPResPartner(models.Model):
     def _check_uniq_vat(self):
         for partner in self:
             if self.search([('id', '!=', partner.id), ('vat', '=', partner.vat)], limit=1):
-                raise UserError(_('You have already defined a partner with the same VAT number. '))
+                raise exceptions.UserError(_('You have already defined a partner with the same VAT number. '))
