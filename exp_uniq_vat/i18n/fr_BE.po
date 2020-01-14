@@ -23,5 +23,5 @@ msgstr ""
 #. module: exp_uniq_vat
 #: code:addons/exp_uniq_vat/models/res_partner.py:0
 #, python-format
-msgid "You have already defined a partner with the same VAT number. "
-msgstr "Un autre contact possède déjà ce numéro de TVA."
+msgid "You have already defined a company with the same VAT number. "
+msgstr "Vous avez déjà définis une compagnie avec ce numéro de TVA. "
