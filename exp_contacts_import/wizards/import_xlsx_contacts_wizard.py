@@ -212,10 +212,10 @@ class ContactsXlsxDataWizard(models.TransientModel):
                         partner_data['vat'] = correct_vat
                     partner.write(partner_data)
 
-                # self.env['res.partner.bank'].create({
-                #     'partner_id': partner.id,
-                #     'acc_number': iban,
-                # })
+                self.env['res.partner.bank'].create({
+                    'partner_id': partner.id,
+                    'acc_number': iban,
+                })
             self._cr.commit()
         except Exception as e:
             print(e)
