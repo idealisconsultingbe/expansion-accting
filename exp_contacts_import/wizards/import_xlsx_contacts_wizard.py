@@ -198,7 +198,6 @@ class ContactsXlsxDataWizard(models.TransientModel):
                 correct_vat = self.get_vat(vat)
                 iban = row[col_names.index("IBAN de la banque par défaut")]
                 partner = self.env['res.partner'].search([('name', '=', name)])
-                print(correct_vat)
                 if not partner:
                     self.env['res.partner'].create({
                         'name': name,
@@ -212,10 +211,13 @@ class ContactsXlsxDataWizard(models.TransientModel):
                         partner_data['vat'] = correct_vat
                     partner.write(partner_data)
 
-                self.env['res.partner.bank'].create({
-                    'partner_id': partner.id,
-                    'acc_number': iban,
-                })
+                if iban:
+                    bank = self.env['res.partner.bank'].search([('acc_number', '=', iban)])
+                    if not bank and partner.id:
+                        self.env['res.partner.bank'].create({
+                            'partner_id': partner.id,
+                            'acc_number': iban,
+                        })
             self._cr.commit()
         except Exception as e:
             print(e)
