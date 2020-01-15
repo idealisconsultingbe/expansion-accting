@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="exp_res_partner_rank_view_form" model="ir.ui.view">
+        <field name="name">exp.res.partner.view.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='vat']" position="after">
+                <field name="customer_rank" widget="boolean" string="Is Customer" />
+                <field name="supplier_rank" widget="boolean" string="Is Supplier" />
+            </xpath>
+            <xpath expr="//field[@name='user_id']" position="attributes">
+                <attribute name="string">Internal Contact</attribute>
+            </xpath>
+            <xpath expr="//field[@name='ref']" position="after">
+                <field name="supplier_ref" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

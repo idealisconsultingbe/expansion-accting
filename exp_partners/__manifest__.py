@@ -20,17 +20,20 @@
 #
 ##############################################################################
 
-from odoo import api, fields, models, _
-from odoo.exceptions import UserError
-
-
-class EXPResPartner(models.Model):
-    _inherit = 'res.partner'
-
-    @api.constrains('vat')
-    def _check_uniq_vat(self):
-        for partner in self:
-            if partner.company_type == 'person':
-                continue
-            if self.search([('id', '!=', partner.id), ('vat', '!=', ""), ('vat', '=', partner.vat)], limit=1):
-                raise UserError(_('You have already defined a partner with the same VAT number. '))
+{
+    'name': 'EXP Partners',
+    'summary': 'Module offering all expectations from Expansion about Partners',
+    'version': '0.1',
+    'description': """
+Module offering all expectations from Expansion about Partners
+        """,
+    'author': 'rdb@idealisconsulting.com - Idealis Consulting',
+    'depends': [
+        'account_accountant',
+    ],
+    'data': [
+        'views/res_partner_views.xml',
+    ],
+    'installable': True,
+    'auto_install': False,
+}

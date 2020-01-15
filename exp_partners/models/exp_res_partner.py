@@ -20,19 +20,21 @@
 #
 ##############################################################################
 
-{
-    'name': 'EXP Uniq VAT',
-    'summary': 'This module blocks the possibility to have 2 contacts with the same VAT number',
-    'version': '1.0',
-    'description': """
-This module blocks the possibility to have 2 contacts with the same VAT number
-        """,
-    'author': 'rdb@idealisconsulting.com - Idealis Consulting',
-    'depends': [
-        'account_accountant',
-    ],
-    'data': [
-    ],
-    'installable': True,
-    'auto_install': False,
-}
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError
+
+
+class EXPResPartner(models.Model):
+    _inherit = 'res.partner'
+
+    supplier_ref = fields.Char(string="Supplier Reference")
+    user_id = fields.Many2one(string='Internal Contact')
+
+    @api.constrains('vat')
+    def _check_uniq_vat(self):
+        for partner in self:
+            if partner.company_type == 'person':
+                continue
+            if self.search([('id', '!=', partner.id), ('vat', '!=', ""), ('vat', '=', partner.vat)], limit=1):
+                message = _("You have already defined a partner ({}) with this VAT number ({})".format(partner.name, partner.vat))
+                raise UserError(message)

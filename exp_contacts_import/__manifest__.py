@@ -30,10 +30,10 @@ Manage the possibility to import Contacts data in Odoo
     'author': 'rdb@idealisconsulting.com - Idealis Consulting',
     'depends': [
         'account_accountant',
+        'exp_partners',
     ],
     'data': [
         'views/import_wizard_view.xml',
-        'views/res_partner_view.xml',
     ],
     'installable': True,
     'auto_install': False,

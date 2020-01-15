@@ -49,6 +49,21 @@ class ContactsXlsxDataWizard(models.TransientModel):
 
     xlsx_file = fields.Binary(string="Your xlsx file")
 
+    def get_zip_in_format(self, zip):
+        try:
+            result = int(zip)
+        except:
+            result = zip
+
+        return result
+
+    def get_vat(self, vat):
+        if vat:
+            vat = str(vat).replace('.', '').replace(' ', '')
+            if vat[:2].lower() not in _ref_vat.keys() or len(vat) != len(_ref_vat[vat[:2].lower()]):
+                vat = ''
+        return vat
+
     def import_contacts_xlsx_data(self):
         fp = tempfile.NamedTemporaryFile(suffix=".xlsx")
         fp.write(binascii.a2b_base64(self.xlsx_file))
@@ -56,71 +71,152 @@ class ContactsXlsxDataWizard(models.TransientModel):
         workbook = xlrd.open_workbook(fp.name)
         sheet = workbook.sheet_by_index(0)
 
-        # Avoid persist data before the import is finished
-        self._cr.autocommit(False)
-
         col_names = sheet.row_values(0)
 
+        if len(col_names) == 21:
+            self.import_db_contacts(sheet, col_names)
+        elif len(col_names) == 15:
+            self.import_clients_data(sheet, col_names)
+        elif len(col_names) == 4:
+            self.import_suppliers_data(sheet, col_names)
+
+    def import_db_contacts(self, sheet, col_names):
+        # Avoid persist data before the import is finished
+        self._cr.autocommit(False)
         try:
             for i in range(1, sheet.nrows):
                 row = sheet.row_values(i)
 
-                # todo generate a uniq external ID
-                name = row[col_names.index("Partenaire")]
-                partner_code = row[col_names.index("Code Partenaire")]
-                vat = str(row[col_names.index("Numéro d'identification d'entreprise")])
-                vat = vat.replace('.', '').replace(' ', '')
-                vat_is_correct = True
-                if vat:
-                    if vat[:2].lower() not in _ref_vat.keys() or len(vat) != len(_ref_vat[vat[:2].lower()]):
-                        vat_is_correct = False
-
-                country_name = row[col_names.index("Pays (destinataire facture)")]
-                contact_name = row[col_names.index("Contact")]
                 partner_type = row[col_names.index("Type de partenaire")]
-                customer_rank = 1 if partner_type == 'Client' else 0
-                supplier_rank = 1 if partner_type == 'Fournisseur' else 0
-                created = row[col_names.index("Date de création")]
+                name = row[col_names.index("Nom du partenaire")]
+                street = row[col_names.index("Rue (destinataire facture)")]
                 zip = row[col_names.index("CP (destin. facture)")]
                 city = row[col_names.index("Ville destinataire de facture")]
-                phone = row[col_names.index("Téléphone 1")]
-                street = row[col_names.index("Rue (destinataire facture)")]
-                email = row[col_names.index("E-mail")]
+                country_name = row[col_names.index("Pays (destin.facture)")]
+                phone = row[col_names.index("Phone (destin.facture)")]
+                title = row[col_names.index("Titre")]
+                contact_name = row[col_names.index("Nom du contact")]
+                job_position = row[col_names.index("Fonction")]
+                tel = row[col_names.index("Téléphone 1")]
+                cellphone = row[col_names.index("Téléphone portable")]
+                fax = row[col_names.index("Fax")]
+                email = row[col_names.index('E-mail')]
+                contact_street = row[col_names.index('Adresse du contact')]
+                contact_zip = row[col_names.index('Code Postal')]
+                contact_city = row[col_names.index('Ville')]
+                contact_country = row[col_names.index('Pays')]
+                customer_rank = 1 if partner_type == 'Client' else 0
+                supplier_rank = 1 if partner_type == 'Fournisseur' else 0
 
-                partner = self.env['res.partner'].search([('vat', '=', vat), ('vat', '!=', "")])
-                if len(partner) > 1:
-                    partner = partner[0]
-
+                partner = self.env['res.partner'].search([('name', '=', name)])
                 if not partner:
                     partner = self.env['res.partner'].create({
                         'company_type': 'company',
                         'name': name,
-                        'vat': vat if vat_is_correct else "",
                         'customer_rank': customer_rank,
                         'supplier_rank': supplier_rank,
-                        'ref': partner_code if customer_rank == 1 else "",
-                        'supplier_ref': partner_code if supplier_rank == 1 else "",
                         'street': street if street != "x" else "",
                         'city': city if city != "x" else "",
+                        'zip': self.get_zip_in_format(zip) if zip != "x" else "",
                         'country_id': self.env['res.country'].search([('name', '=', country_name)]).id,
-                        'zip': zip if zip != "x" else "",
                         'phone': phone,
-                        'email': email,
-                        'create_date': created,
+                        'lang': 'fr_BE',
                     })
-
-                    contact = self.env['res.partner'].search([('name', '=', contact_name)])
-                    if not contact:
-                        contact = self.env['res.partner'].create({'name': contact_name})
-                        contact.parent_id = partner.id
                 else:
                     partner.write({
-                        'ref': partner_code if customer_rank == 1 else partner.ref,
-                        'supplier_ref': partner_code if supplier_rank == 1 else partner.supplier_ref
+                        'customer_rank': partner.customer_rank if supplier_rank else customer_rank,
+                        'supplier_rank': partner.supplier_rank if customer_rank else supplier_rank,
+                    })
+
+                title_exists = self.env['res.partner.title'].search([('name', '=', title)])
+                if not title_exists:
+                    title_exists = self.env['res.partner.title'].create({'name': title})
+                contact = self.env['res.partner'].search([('name', '=', contact_name)])
+                if not contact:
+                    self.env['res.partner'].create({
+                        'name': contact_name,
+                        'company_type': 'person',
+                        'title': title_exists.id,
+                        'function': job_position,
+                        'lang': 'fr_BE',
+                        'phone': tel if tel != "xx" else "",
+                        'mobile': cellphone if cellphone != "xx" else "",
+                        'email': email if email != "x" else "",
+                        'street': contact_street,
+                        'city': contact_city,
+                        'country_id': self.env['res.country'].search([('name', '=', contact_country)]).id,
+                        'zip': self.get_zip_in_format(contact_zip),
+                        'parent_id': partner.id
                     })
 
             self._cr.commit()
 
+        except Exception as e:
+            print(e)
+            self._cr.rollback()
+            raise Warning("Something goes wrong during the import!")
+
+    def import_clients_data(self, sheet, col_names):
+        self._cr.autocommit(False)
+        try:
+            for i in range(1, sheet.nrows):
+                row = sheet.row_values(i)
+                name = row[col_names.index("Partenaire")]
+                code = row[col_names.index("Code Partenaire")]
+                vat = row[col_names.index("Numéro d'identification d'entreprise")]
+                correct_vat = self.get_vat(vat)
+                print(correct_vat)
+                partner = self.env['res.partner'].search([('name', '=', name)])
+                if not partner:
+                    self.env['res.partner'].create({
+                        'name': name,
+                        'customer_rank': 1,
+                        'ref': code,
+                        'vat': correct_vat,
+                    })
+                else:
+                    partner_data = {'ref': code}
+                    if not partner.vat:
+                        partner_data['vat'] = correct_vat
+                    partner.write(partner_data)
+
+            self._cr.commit()
+
+        except Exception as e:
+            print(e)
+            self._cr.rollback()
+            raise Warning("Something goes wrong during the import!")
+
+    def import_suppliers_data(self, sheet, col_names):
+        self._cr.autocommit(False)
+        try:
+            for i in range(1, sheet.nrows):
+                row = sheet.row_values(i)
+                name = row[col_names.index("Partenaire")]
+                code = row[col_names.index("Code Partenaire")]
+                vat = row[col_names.index("Numéro d'identification d'entreprise")]
+                correct_vat = self.get_vat(vat)
+                iban = row[col_names.index("IBAN de la banque par défaut")]
+                partner = self.env['res.partner'].search([('name', '=', name)])
+                print(correct_vat)
+                if not partner:
+                    self.env['res.partner'].create({
+                        'name': name,
+                        'supplier_rank': 1,
+                        'supplier_ref': code,
+                        'vat': correct_vat,
+                    })
+                else:
+                    partner_data = {'supplier_ref': code}
+                    if not partner.vat:
+                        partner_data['vat'] = correct_vat
+                    partner.write(partner_data)
+
+                # self.env['res.partner.bank'].create({
+                #     'partner_id': partner.id,
+                #     'acc_number': iban,
+                # })
+            self._cr.commit()
         except Exception as e:
             print(e)
             self._cr.rollback()
