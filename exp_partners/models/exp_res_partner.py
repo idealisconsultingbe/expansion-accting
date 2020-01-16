@@ -37,5 +37,4 @@ class EXPResPartner(models.Model):
                 continue
             if self.search([('id', '!=', partner.id), ('vat', '!=', ""), ('vat', '=', partner.vat)], limit=1):
                 message = _("You have already defined a partner ({}) with this VAT number ({})".format(partner.name, partner.vat))
-                print(message)
-                # raise UserError(message)
+                raise UserError(message)
