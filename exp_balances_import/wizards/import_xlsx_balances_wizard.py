@@ -33,7 +33,7 @@ class BalancesXlsxDataWizard(models.TransientModel):
             for i in range(1, sheet.nrows):
                 row = sheet.row_values(i)
 
-                name_client = row[col_names.index("Nom du client")] if "Nom du Client" in col_names else row[col_names.index("Nom du fournisseur")]
+                name_client = row[col_names.index("Nom du client")] if "Nom du client" in col_names else row[col_names.index("Nom du fournisseur")]
                 amount_due = row[col_names.index("Solde dû")]
                 new_partner = name_client != ""
                 if name_client != "":
