@@ -177,7 +177,11 @@ class ContactsXlsxDataWizard(models.TransientModel):
                     partner_data = {'ref': code}
                     if not partner.vat:
                         partner_data['vat'] = correct_vat
-                    partner.write(partner_data)
+                    try:
+                        partner.write(partner_data)
+                    except Exception as e:
+                        print(e)
+                        partner.write({'ref': code})
 
             self._cr.commit()
 
@@ -209,7 +213,11 @@ class ContactsXlsxDataWizard(models.TransientModel):
                     partner_data = {'supplier_ref': code}
                     if not partner.vat:
                         partner_data['vat'] = correct_vat
-                    partner.write(partner_data)
+                    try:
+                        partner.write(partner_data)
+                    except Exception as e:
+                        print(e)
+                        partner.write({'supplier_ref': code})
 
                 # self.env['res.partner.bank'].create({
                 #     'partner_id': partner.id,
