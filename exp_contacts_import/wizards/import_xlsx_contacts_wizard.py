@@ -73,9 +73,9 @@ class ContactsXlsxDataWizard(models.TransientModel):
 
         col_names = sheet.row_values(0)
 
-        if len(col_names) == 21:
+        if len(col_names) > 15:
             self.import_db_contacts(sheet, col_names)
-        elif len(col_names) == 15:
+        elif len(col_names) == 3:
             self.import_clients_data(sheet, col_names)
         elif len(col_names) == 4:
             self.import_suppliers_data(sheet, col_names)
@@ -165,7 +165,6 @@ class ContactsXlsxDataWizard(models.TransientModel):
                 code = row[col_names.index("Code Partenaire")]
                 vat = row[col_names.index("Numéro d'identification d'entreprise")]
                 correct_vat = self.get_vat(vat)
-                print(correct_vat)
                 partner = self.env['res.partner'].search([('name', '=', name)])
                 if not partner:
                     self.env['res.partner'].create({
